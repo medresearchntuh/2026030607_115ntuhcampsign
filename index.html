@@ -213,8 +213,7 @@
             <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#d3b4d3]/30 mb-4"><i class="fas fa-check text-theme-primary text-3xl"></i></div>
             <h3 class="text-2xl font-bold text-theme-dark mb-2">簽到成功!</h3>
             <p class="text-gray-500 mb-6 text-sm">資料已寫入系統。</p>
-            <div class="bg-gray-100 rounded p-2 mb-6"><p class="text-xs text-gray-500" id="redirect-timer">3秒後跳轉...</p></div>
-            <a href="https://linktr.ee/ntuhmed" class="block w-full bg-theme-primary text-white font-bold py-3 rounded-lg hover:bg-[#534a55] transition shadow-md">立即前往活動頁</a>
+            <a href="https://linktr.ee/ntuhmed" class="block w-full bg-theme-primary text-white font-bold py-3 rounded-lg hover:bg-[#534a55] transition shadow-md">返回活動網頁</a>
         </div>
     </div>
 
@@ -409,13 +408,7 @@
                     loadingOverlay.classList.add('hidden');
                     document.getElementById('success-modal').classList.remove('hidden');
                     
-                    let timeLeft = 3;
-                    const timerElement = document.getElementById('redirect-timer');
-                    setInterval(() => {
-                        timeLeft--;
-                        timerElement.textContent = `${timeLeft}秒後跳轉...`;
-                        if (timeLeft <= 0) window.location.href = "https://linktr.ee/ntuhmed";
-                    }, 1000);
+                    // Removed auto-redirect logic
                 } else {
                     throw new Error(result.message || "Unknown error");
                 }
