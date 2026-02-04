@@ -68,7 +68,7 @@
     <main class="flex-grow p-4 max-w-md mx-auto w-full relative">
         
         <!-- System Status Alert -->
-        <div id="status-bar" class="hidden mb-4 p-3 rounded-lg text-sm flex items-center justify-center"></div>
+        <div id="status-bar" class="hidden mb-4 p-4 rounded-lg text-sm flex flex-col items-center justify-center shadow-sm"></div>
 
         <!-- Card 1: Search -->
         <div id="search-section" class="bg-white rounded-xl shadow-md p-6 mb-6 fade-in border-t-4 border-theme-primary">
@@ -84,7 +84,7 @@
                             <i class="fas fa-search text-gray-400"></i>
                         </div>
                         <input type="text" id="employee-id" 
-                            class="pl-10 block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-2 focus-ring-theme p-3 shadow-sm transition outline-none disabled:bg-gray-100 disabled:text-gray-400" 
+                            class="pl-10 block w-full rounded-lg border-gray-300 bg-gray-50 border focus:ring-2 focus-ring-theme p-3 shadow-sm transition outline-none disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed" 
                             placeholder="請稍候，名冊讀取中..." disabled oninput="this.value = this.value.toUpperCase()">
                         
                         <button id="btn-search" onclick="lookupEmployee()" disabled
@@ -263,6 +263,33 @@
         window.addEventListener('load', async () => {
             const inputField = document.getElementById('employee-id');
             const searchBtn = document.getElementById('btn-search');
+            const statusBar = document.getElementById('status-bar');
+
+            // --- 系統開放時間設定 ---
+            // 2026/03/06 AM 08:00
+            const SYSTEM_OPEN_TIME = new Date("2026-03-06T08:00:00");
+            const now = new Date();
+
+            if (now < SYSTEM_OPEN_TIME) {
+                // 顯示未開放訊息
+                statusBar.classList.remove('hidden');
+                statusBar.classList.add('bg-yellow-100', 'text-yellow-800', 'border', 'border-yellow-200');
+                statusBar.innerHTML = `<div class="font-bold text-base"><i class="fas fa-clock mr-2"></i>系統尚未開放</div><div class="text-xs mt-1">開放時間：2026年3月6日 上午 08:00</div>`;
+                
+                // 鎖定輸入框
+                inputField.placeholder = "系統將於 2026/03/06 08:00 開放";
+                inputField.disabled = true;
+                searchBtn.disabled = true;
+                searchBtn.classList.remove('bg-gray-400'); // Clean up classes to ensure gray state
+                searchBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+                
+                // 仍然嘗試讀取即時看板 (測試用)
+                // 這裡不 return，讓它繼續執行 fetchLiveRecords，但不執行名冊讀取以節省資源
+                // 但為了防止輸入，我們將直接在這裡中斷名冊讀取流程
+                fetchLiveRecords();
+                setInterval(fetchLiveRecords, 30000); 
+                return; 
+            }
             
             // Check if user set the URL
             if (!SCRIPT_URL || SCRIPT_URL.includes("您的_GOOGLE")) {
