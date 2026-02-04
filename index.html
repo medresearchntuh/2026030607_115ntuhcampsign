@@ -210,6 +210,13 @@
                 </button>
             </div>
             
+            <!-- Headers -->
+            <div class="grid grid-cols-12 gap-2 text-xs text-gray-400 font-bold mb-2 px-3">
+                <div class="col-span-3">時間</div>
+                <div class="col-span-5">姓名/員編</div>
+                <div class="col-span-4 text-right">狀態/日期</div>
+            </div>
+
             <div class="overflow-y-auto max-h-64 custom-scrollbar rounded border border-gray-100 bg-gray-50 p-2">
                 <div id="live-list-content" class="space-y-2">
                     <div class="text-center text-gray-400 py-4 text-xs">
@@ -242,7 +249,9 @@
             <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#d3b4d3]/30 mb-4"><i class="fas fa-check text-theme-primary text-3xl"></i></div>
             <h3 class="text-2xl font-bold text-theme-dark mb-2">簽到成功!</h3>
             <p class="text-gray-500 mb-6 text-sm">資料已寫入系統。</p>
-            <a href="https://linktr.ee/ntuhmed" class="block w-full bg-theme-primary text-white font-bold py-3 rounded-lg hover:bg-[#534a55] transition shadow-md">返回活動網頁</a>
+            <button onclick="resetAndClose()" class="block w-full bg-theme-primary text-white font-bold py-3 rounded-lg hover:bg-[#534a55] transition shadow-md">
+                返回原簽到頁面
+            </button>
         </div>
     </div>
 
@@ -316,19 +325,48 @@
 
                 listContainer.innerHTML = '';
                 records.forEach(r => {
-                    const isCheckIn = r.type === "活動報到";
+                    const isCheckIn = r.type && r.type.includes("報到");
                     const colorClass = isCheckIn ? "text-green-700 bg-green-50 border-green-200" : "text-orange-700 bg-orange-50 border-orange-200";
                     const icon = isCheckIn ? "fa-sign-in-alt" : "fa-sign-out-alt";
                     
+                    // Format Date: 2026-03-06 -> 3/6
+                    let dateStr = "";
+                    if(r.dateLabel) {
+                        const dateObj = new Date(r.dateLabel);
+                        if(!isNaN(dateObj)) {
+                            dateStr = (dateObj.getMonth() + 1) + '/' + dateObj.getDate();
+                        } else {
+                             dateStr = r.dateLabel; // Fallback
+                        }
+                    }
+
+                    // ID Handling
+                    const idDisplay = r.id ? `<span class="text-xs text-gray-400 font-normal ml-1">(${r.id})</span>` : '';
+
                     const html = `
-                        <div class="flex justify-between items-center p-2 rounded border border-gray-200 bg-white text-sm shadow-sm">
-                            <div class="flex items-center gap-2">
-                                <span class="font-mono text-xs font-bold text-gray-500 bg-gray-100 px-1.5 rounded">${r.time}</span>
-                                <span class="font-bold text-gray-700">${r.name}</span>
+                        <div class="flex justify-between items-center p-3 rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition">
+                            <!-- Left: Time & Name/ID -->
+                            <div class="flex items-center gap-3 overflow-hidden">
+                                <div class="flex flex-col items-center justify-center bg-gray-100 rounded p-1.5 min-w-[3.5rem]">
+                                    <span class="font-mono text-sm font-bold text-gray-600">${r.time}</span>
+                                </div>
+                                <div class="flex flex-col truncate">
+                                    <div class="font-bold text-gray-800 text-sm truncate">
+                                        ${r.name} 
+                                        ${idDisplay}
+                                    </div>
+                                </div>
                             </div>
-                            <span class="text-xs px-2 py-0.5 rounded-full border ${colorClass} flex items-center">
-                                <i class="fas ${icon} mr-1"></i>${r.type}
-                            </span>
+                            
+                            <!-- Right: Status & Date -->
+                            <div class="flex flex-col items-end gap-1 min-w-[5rem]">
+                                <span class="text-xs px-2 py-0.5 rounded-full border ${colorClass} flex items-center font-bold">
+                                    <i class="fas ${icon} mr-1"></i>${r.type}
+                                </span>
+                                <span class="text-[10px] text-gray-400 font-medium">
+                                    <i class="far fa-calendar-alt mr-1"></i>${dateStr}
+                                </span>
+                            </div>
                         </div>
                     `;
                     listContainer.innerHTML += html;
@@ -430,6 +468,13 @@
             document.getElementById('btn-search').classList.remove('hidden');
             document.getElementById('btn-clear').classList.add('hidden');
             input.focus();
+        }
+
+        // New function to close modal and reset
+        function resetAndClose() {
+            document.getElementById('success-modal').classList.add('hidden');
+            resetForm();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function updateTime() {
