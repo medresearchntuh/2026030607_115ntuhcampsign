@@ -31,6 +31,12 @@
         
         /* Loading Overlay for Init */
         #init-loader { z-index: 100; }
+        
+        /* Live Records Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d3b4d3; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #5e4a6f; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -191,6 +197,29 @@
                 </button>
             </form>
         </div>
+
+        <!-- NEW: Live Records Section -->
+        <div id="live-records-section" class="bg-white rounded-xl shadow-md p-6 mb-6 fade-in border-t-4 border-gray-400">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-theme-dark font-bold text-lg flex items-center">
+                    <span class="w-1 h-6 bg-gray-400 mr-2 rounded-full"></span>
+                    即時簽到狀況 (最近30筆)
+                </h3>
+                <button onclick="fetchLiveRecords()" class="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded transition">
+                    <i class="fas fa-sync-alt mr-1"></i>更新
+                </button>
+            </div>
+            
+            <div class="overflow-y-auto max-h-64 custom-scrollbar rounded border border-gray-100 bg-gray-50 p-2">
+                <div id="live-list-content" class="space-y-2">
+                    <div class="text-center text-gray-400 py-4 text-xs">
+                        <i class="fas fa-spinner fa-spin mr-1"></i> 正在載入資料...
+                    </div>
+                </div>
+            </div>
+            <p class="text-right text-[10px] text-gray-400 mt-2">*系統每30秒自動更新</p>
+        </div>
+
     </main>
 
     <!-- Footer -->
@@ -236,6 +265,7 @@
                 // Show subtle loading state in placeholder
                 inputField.placeholder = "正在從雲端讀取名冊...";
                 
+                // Fetch Roster (Default)
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
 
@@ -254,12 +284,61 @@
                 
                 console.log(`Loaded ${participantData.length} participants.`);
 
+                // Start fetching live records
+                fetchLiveRecords();
+                setInterval(fetchLiveRecords, 30000); // Poll every 30s
+
             } catch (error) {
                 console.error("Fetch Error:", error);
                 inputField.placeholder = "讀取失敗，請重新整理頁面";
                 alert("無法讀取名冊，請檢查網路或聯繫管理員。\n錯誤: " + error.message);
             }
         });
+
+        // Live Records Fetcher
+        async function fetchLiveRecords() {
+            const listContainer = document.getElementById('live-list-content');
+            try {
+                // Using the specific action parameter
+                const response = await fetch(`${SCRIPT_URL}?action=get_records`);
+                const records = await response.json();
+
+                if (!Array.isArray(records)) {
+                    // Fallback if backend is not updated yet
+                    listContainer.innerHTML = `<div class="text-center text-gray-400 py-2 text-xs">需更新後端程式碼才能顯示</div>`;
+                    return;
+                }
+
+                if (records.length === 0) {
+                    listContainer.innerHTML = `<div class="text-center text-gray-400 py-2 text-xs">目前尚無簽到紀錄</div>`;
+                    return;
+                }
+
+                listContainer.innerHTML = '';
+                records.forEach(r => {
+                    const isCheckIn = r.type === "活動報到";
+                    const colorClass = isCheckIn ? "text-green-700 bg-green-50 border-green-200" : "text-orange-700 bg-orange-50 border-orange-200";
+                    const icon = isCheckIn ? "fa-sign-in-alt" : "fa-sign-out-alt";
+                    
+                    const html = `
+                        <div class="flex justify-between items-center p-2 rounded border border-gray-200 bg-white text-sm shadow-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-xs font-bold text-gray-500 bg-gray-100 px-1.5 rounded">${r.time}</span>
+                                <span class="font-bold text-gray-700">${r.name}</span>
+                            </div>
+                            <span class="text-xs px-2 py-0.5 rounded-full border ${colorClass} flex items-center">
+                                <i class="fas ${icon} mr-1"></i>${r.type}
+                            </span>
+                        </div>
+                    `;
+                    listContainer.innerHTML += html;
+                });
+
+            } catch (e) {
+                console.error("Live records error:", e);
+                // Don't alert user to avoid annoyance, just log
+            }
+        }
 
         // 2. Local Storage History Logic (Visual Feedback only)
         function getStoredRecords() {
@@ -403,6 +482,9 @@
                         timestamp: now.toISOString(),
                         timeStr: now.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hour12: false })
                     });
+
+                    // Refresh Live List immediately
+                    fetchLiveRecords();
 
                     // Success UI
                     loadingOverlay.classList.add('hidden');
